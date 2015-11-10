@@ -11,7 +11,7 @@ todomvc.controller('TodoCtrl',
 function ($scope, $location, $firebaseArray, $sce, $localStorage, $window) {
 	// set local storage
 	$scope.$storage = $localStorage;
-
+	
 	var scrollCountDelta = 10;
 	$scope.maxQuestion = scrollCountDelta;
 
@@ -30,7 +30,10 @@ if (!roomId || roomId.length === 0) {
 	roomId = "all";
 }
 
-var firebaseURL = "https://flickering-torch-4928.firebaseIO.com";
+	$scope.predicate = 'timestamp';
+	$scope.reverse = true;
+
+var firebaseURL = "https://flickering-torch-4928.firebaseIO.com/";
 
 
 $scope.roomId = roomId;
@@ -61,10 +64,10 @@ $scope.$watchCollection('todos', function () {
 		}
 
 		// set time
-		todo.dateString = new Date(todo.timestamp).toString();
+		//todo.dateString = new Date(todo.timestamp).toString();
+		//$scope.$storage[todo.$id] = "";
 		todo.tags = todo.wholeMsg.match(/#\w+/g);
-
-		todo.trustedDesc = $sce.trustAsHtml(todo.linkedDesc);
+		//todo.trustedDesc = $sce.trustAsHtml(todo.linkedDesc);
 	});
 
 	$scope.totalCount = total;
@@ -113,10 +116,11 @@ $scope.addTodo = function () {
 		head: head,
 		headLastChar: head.slice(-1),
 		desc: desc,
-		linkedDesc: Autolinker.link(desc, {newWindow: false, stripPrefix: false}),
+		//linkedDesc: Autolinker.link(desc, {newWindow: false, stripPrefix: false}),
+		newQuestion: true,
 		completed: false,
 		timestamp: new Date().getTime(),
-		tags: "...",
+		//tags: "...",
 		echo: 0,
 		order: 0
 	});
@@ -132,6 +136,18 @@ $scope.editTodo = function (todo) {
 $scope.addEcho = function (todo) {
 	$scope.editedTodo = todo;
 	todo.echo = todo.echo + 1;
+	// Hack to order using this order.
+	todo.order = todo.order -1;
+	$scope.todos.$save(todo);
+
+	// Disable the button
+	$scope.$storage[todo.$id] = "echoed";
+};
+
+// Dislike function
+$scope.subtractEcho = function (todo) {
+	$scope.editedTodo = todo;
+	todo.echo = todo.echo - 1;			// modified
 	// Hack to order using this order.
 	todo.order = todo.order -1;
 	$scope.todos.$save(todo);
