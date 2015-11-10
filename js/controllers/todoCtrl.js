@@ -11,6 +11,8 @@ todomvc.controller('TodoCtrl',
 function ($scope, $location, $firebaseArray, $sce, $localStorage, $window) {
 	// set local storage
 	$scope.$storage = $localStorage;
+	$scope.newNotification = false;
+	$scope.numberOfNewQuestions = 0;
 	
 	var scrollCountDelta = 10;
 	$scope.maxQuestion = scrollCountDelta;
@@ -48,6 +50,15 @@ $scope.todos = $firebaseArray(query);
 //$scope.input.wholeMsg = '';
 $scope.editedTodo = null;
 
+// check administrator login state
+if ($scope.$storage.authData != null){
+	alert($scope.$storage.authData.password.email);
+	//$scope.$apply(function(){
+		$scope.$authData = $scope.$storage.authData;
+		$scope.isAdmin = true;
+	//});
+}
+
 // pre-precessing for collection
 $scope.$watchCollection('todos', function () {
 	var total = 0;
@@ -62,7 +73,6 @@ $scope.$watchCollection('todos', function () {
 		if (todo.completed === false) {
 			remaining++;
 		}
-
 		// set time
 		//todo.dateString = new Date(todo.timestamp).toString();
 		//$scope.$storage[todo.$id] = "";
@@ -70,6 +80,14 @@ $scope.$watchCollection('todos', function () {
 		//todo.trustedDesc = $sce.trustAsHtml(todo.linkedDesc);
 	});
 
+	// new questions notification
+	if ($scope.totalCount != "undefined" && $scope.totalCount != 0 && total > $scope.totalCount){
+		var noOfNewQuestions = total - $scope.totalCount;
+		$scope.numberOfNewQuestions = noOfNewQuestions;
+		//alert("There are " + $scope.numberOfNewQuestions + " new questions");
+		$scope.setNewNotification(true);
+	}
+	
 	$scope.totalCount = total;
 	$scope.remainingCount = remaining;
 	$scope.completedCount = total - remaining;
@@ -247,5 +265,42 @@ angular.element($window).bind("scroll", function() {
 		$scope.$apply();
 	}
 });
+
+$scope.adminLogin = function(){
+	//var ref = new Firebase(firebaseURL);
+		
+	echoRef.authWithPassword({
+		email    : $scope.userName.trim(),
+		password : $scope.userPassword.trim()
+	}, function(error, authData) { 
+		if (error === null){
+			alert(authData.password.email.toString() + "login success");
+			//$('#adminLogin').append(authData.password.email.toString());
+			$scope.$apply(function(){
+				$scope.$storage.authData = authData;
+				$scope.$authData = authData;
+				$scope.isAdmin = true;
+			});
+		}
+		else
+			alert(error);
+	}, {
+		remember: "sessionOnly"
+	});
+}
+	
+$scope.adminLogout = function(){
+		
+	//var ref = new Firebase(firebaseURL);
+	echoRef.unauth();
+	delete $scope.$storage.authData;
+	$scope.isAdmin = false;
+}
+
+$scope.setNewNotification = function(show){
+	$scope.newNotification = show;
+	if (!show)
+		$scope.toTop();
+}
 
 }]);
